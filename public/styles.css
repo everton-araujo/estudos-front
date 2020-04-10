@@ -17,6 +17,14 @@ a {
     text-decoration: none;
 }
 
+a#flaticon {
+    background: none;
+}
+
+a#flaticon:hover {
+    color: rgb(247, 175, 217);;
+}
+
 a:hover {
     text-decoration: underline;
 }
@@ -143,7 +151,7 @@ footer a:link {
 
 #modal {
     background: #ff5E84;
-    position: absolute;
+    position: fixed;
     top: 0;
     bottom: 0;
     right: 0;
