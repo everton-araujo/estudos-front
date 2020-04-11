@@ -2,55 +2,13 @@
 const express = require('express')
 const server = express()
 
-// coleção das ideias
-const ideas = [
-    {
-        img: "https://image.flaticon.com/icons/svg/2729/2729007.svg",
-        title: "Cursos de Programação",
-        category: "Estudo",
-        description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi unde quisquam quod ex quia.",
-        url: "http://google.com"
-    },
-    {
-        img: "https://image.flaticon.com/icons/svg/753/753024.svg",
-        title: "Exercícios",
-        category: "Saúde",
-        description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi unde quisquam quod ex quia.",
-        url: "http://google.com"
-    },
-    {
-        img: "https://image.flaticon.com/icons/svg/1830/1830774.svg",
-        title: "Meditação",
-        category: "Mentalidade",
-        description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi unde quisquam quod ex quia.",
-        url: "http://google.com"
-    },
-    {
-        img: "https://image.flaticon.com/icons/svg/1830/1830832.svg",
-        title: "Tocar Instrumento",
-        category: "Diversão",
-        description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi unde quisquam quod ex quia.",
-        url: "http://google.com"
-    },
-    {
-        img: "https://image.flaticon.com/icons/svg/2235/2235423.svg",
-        title: "Jogar VideGame",
-        category: "Diversão",
-        description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi unde quisquam quod ex quia.",
-        url: "http://google.com"
-    },
-    {
-        img: "https://image.flaticon.com/icons/svg/2737/2737098.svg",
-        title: "Dormir",
-        category: "Saúde",
-        description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi unde quisquam quod ex quia.",
-        url: "http://google.com"
-    },
-
-]
+const db = require('./db')
 
 // configurar arquivos estáticos (css, scripts, imagens)
 server.use(express.static('public'))
+
+// habilitar uso do req.body
+server.use(express.urlencoded({ extended: true }))
 
 // configuração do nunjucks
 const nunjucks = require('nunjucks')
@@ -63,23 +21,76 @@ nunjucks.configure('views', {
 // capturado pedido do cliente para responder
 server.get('/', function (req, res) {
 
-    const reversedIdeas = [...ideas].reverse()
-
-    let lastIdeas = []
-    for (let idea of reversedIdeas) {
-        if (lastIdeas.length < 2) {
-            lastIdeas.push(idea)
+    db.all(`SELECT * FROM ideas`, function (err, rows) {
+        if (err) {
+            console.log(err)
+            return res.send('Erro no banco de dados')
         }
-    }
 
-    return res.render('index.html', { ideas: lastIdeas })
+        const reversedIdeas = [...rows].reverse()
+
+        let lastIdeas = []
+        for (let idea of reversedIdeas) {
+            if (lastIdeas.length < 2) {
+                lastIdeas.push(idea)
+            }
+        }
+
+        return res.render('index.html', { ideas: lastIdeas })
+    })
+
 })
 
 server.get('/ideas', function (req, res) {
 
-    const reversedIdeas = [...ideas].reverse()
+    // Pega tudo que foi digitado no formulário
+    // console.log(req.query)
 
-    return res.render('ideas.html', { ideas: reversedIdeas })
+
+    db.all(`SELECT * FROM ideas`, function (err, rows) {
+        if (err) {
+            console.log(err)
+            return res.send('Erro no banco de dados')
+        }
+
+        const reversedIdeas = [...rows].reverse()
+
+        return res.render('ideas.html', { ideas: reversedIdeas })
+    })
+
+})
+
+server.post('/', function (req, res) {
+    // Inserir dados na tabela
+    const query =
+        `
+        INSERT INTO ideas(
+            image,
+            title,
+            category,
+            description,
+            link
+        ) VALUES(?,?,?,?,?);
+    `
+
+    const values = [
+        req.body.image,
+        req.body.title,
+        req.body.category,
+        req.body.description,
+        req.body.link,
+    ]
+
+    db.run(query, values, function (err) {
+        if (err) {
+            console.log(err)
+            return res.send('Erro no banco de dados')
+        }
+
+        // redireciona para a página ideas
+        return res.redirect('/ideas')
+
+    })
 })
 
 // servidor ligado na porta 3000
